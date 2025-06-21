@@ -1,0 +1,1 @@
+export { IdeEditor } from "./ide-editor";
