@@ -12,7 +12,7 @@ export { ListKeymap } from "@tiptap/extension-list-keymap";
 export { Color } from "@tiptap/extension-color";
 export { Highlight } from "@tiptap/extension-highlight";
 
-export { CodeBlock } from "./CodeBlock";
+export { CodeBlock } from "./MyCodeBlock";
 export { Figure } from "./Figure";
 export { Figcaption } from "./Figcaption";
 export { ImageCaption } from "./ImageFigure";

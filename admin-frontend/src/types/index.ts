@@ -1,9 +1,5 @@
-export type DocumentId = number;
-export interface DocumentBase {
-    id: DocumentId;
-    created_at?: string;
-    updated_at?: string;
-}
+import { DocumentBase } from "./document";
+
 export type FieldItem = {
     label: string;
     value: string;

@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: uyren_postgres_dev
+    env_file:
+      - ./backend/.env    
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - uyren_postgres_data:/var/lib/postgresql/data
+    networks:
+      - uyren_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: uyren_backend_dev
+    env_file:
+      - ./backend/.env
+    environment:
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./backend:/app
+      - uyren_backend_static:/app/staticfiles
+      - uyren_backend_media:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - uyren_network
+    restart: unless-stopped
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+volumes:
+  uyren_postgres_data:
+  uyren_backend_static:
+  uyren_backend_media:
+
+networks:
+  uyren_network:
+    driver: bridge

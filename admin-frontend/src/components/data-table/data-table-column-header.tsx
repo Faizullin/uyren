@@ -1,113 +1,99 @@
-import { useSearchParams } from "next/navigation"
-import {
-  ArrowDownIcon,
-  ArrowUpIcon,
-  CaretSortIcon,
-  EyeNoneIcon,
-} from "@radix-ui/react-icons"
-import { type Column } from "@tanstack/react-table"
+"use client";
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import type { Column } from "@tanstack/react-table";
+import {
+  ChevronDown,
+  ChevronUp,
+  ChevronsUpDown,
+  EyeOff,
+  X,
+} from "lucide-react";
+
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 interface DataTableColumnHeaderProps<TData, TValue>
-  extends React.HTMLAttributes<HTMLDivElement> {
-  column: Column<TData, TValue>
-  title: string
+  extends React.ComponentProps<typeof DropdownMenuTrigger> {
+  column: Column<TData, TValue>;
+  title: string;
 }
 
 export function DataTableColumnHeader<TData, TValue>({
   column,
   title,
   className,
+  ...props
 }: DataTableColumnHeaderProps<TData, TValue>) {
-  const searchParams = useSearchParams()
-
   if (!column.getCanSort() && !column.getCanHide()) {
-    return <div className={cn(className)}>{title}</div>
+    return <div className={cn(className)}>{title}</div>;
   }
 
-  const [columnName, sortOrder] = searchParams.get("sort")?.split(".") ?? []
-  const isSorted = columnName === column.id
-
   return (
-    <div className={cn("flex items-center space-x-2", className)}>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            aria-label={
-              sortOrder === "desc" && isSorted
-                ? "Sorted descending. Click to sort ascending."
-                : sortOrder === "asc" && isSorted
-                  ? "Sorted ascending. Click to sort descending."
-                  : "Not sorted. Click to sort ascending."
-            }
-            variant="ghost"
-            size="sm"
-            className="-ml-3 h-8 data-[state=open]:bg-accent"
-          >
-            <span>{title}</span>
-            {column.getCanSort() && sortOrder === "desc" && isSorted ? (
-              <ArrowDownIcon className="ml-2 size-4" aria-hidden="true" />
-            ) : sortOrder === "asc" && isSorted ? (
-              <ArrowUpIcon className="ml-2 size-4" aria-hidden="true" />
-            ) : (
-              <CaretSortIcon className="ml-2 size-4" aria-hidden="true" />
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="start"
-          className="dark:bg-background/95 dark:backdrop-blur-md dark:supports-[backdrop-filter]:bg-background/40"
-        >
-          {column.getCanSort() && (
-            <>
-              <DropdownMenuItem
-                aria-label="Sort ascending"
-                onClick={() => column.toggleSorting(false)}
-              >
-                <ArrowUpIcon
-                  className="mr-2 size-3.5 text-muted-foreground/70"
-                  aria-hidden="true"
-                />
-                Asc
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                aria-label="Sort descending"
-                onClick={() => column.toggleSorting(true)}
-              >
-                <ArrowDownIcon
-                  className="mr-2 size-3.5 text-muted-foreground/70"
-                  aria-hidden="true"
-                />
-                Desc
-              </DropdownMenuItem>
-            </>
-          )}
-          {column.getCanSort() && column.getCanHide() && (
-            <DropdownMenuSeparator />
-          )}
-          {column.getCanHide() && (
-            <DropdownMenuItem
-              aria-label="Hide column"
-              onClick={() => column.toggleVisibility(false)}
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className={cn(
+          "-ml-1.5 flex h-8 items-center gap-1.5 rounded-md px-2 py-1.5 hover:bg-accent focus:outline-none focus:ring-1 focus:ring-ring data-[state=open]:bg-accent [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground",
+          className,
+        )}
+        {...props}
+      >
+        {title}
+        {column.getCanSort() &&
+          (column.getIsSorted() === "desc" ? (
+            <ChevronDown />
+          ) : column.getIsSorted() === "asc" ? (
+            <ChevronUp />
+          ) : (
+            <ChevronsUpDown />
+          ))}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-28">
+        {column.getCanSort() && (
+          <>
+            <DropdownMenuCheckboxItem
+              className="relative pr-8 pl-2 [&>span:first-child]:right-2 [&>span:first-child]:left-auto [&_svg]:text-muted-foreground"
+              checked={column.getIsSorted() === "asc"}
+              onClick={() => column.toggleSorting(false)}
             >
-              <EyeNoneIcon
-                className="mr-2 size-3.5 text-muted-foreground/70"
-                aria-hidden="true"
-              />
-              Hide
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  )
+              <ChevronUp />
+              Asc
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              className="relative pr-8 pl-2 [&>span:first-child]:right-2 [&>span:first-child]:left-auto [&_svg]:text-muted-foreground"
+              checked={column.getIsSorted() === "desc"}
+              onClick={() => column.toggleSorting(true)}
+            >
+              <ChevronDown />
+              Desc
+            </DropdownMenuCheckboxItem>
+            {column.getIsSorted() && (
+              <DropdownMenuItem
+                className="pl-2 [&_svg]:text-muted-foreground"
+                onClick={() => column.clearSorting()}
+              >
+                <X />
+                Reset
+              </DropdownMenuItem>
+            )}
+          </>
+        )}
+        {column.getCanHide() && (
+          <DropdownMenuCheckboxItem
+            className="relative pr-8 pl-2 [&>span:first-child]:right-2 [&>span:first-child]:left-auto [&_svg]:text-muted-foreground"
+            checked={!column.getIsVisible()}
+            onClick={() => column.toggleVisibility(false)}
+          >
+            <EyeOff />
+            Hide
+          </DropdownMenuCheckboxItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }

@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: uyren_postgres_prod
+    env_file:
+      - ./backend/.env.production
+    volumes:
+      - uyren_postgres_data:/var/lib/postgresql/data
+    networks:
+      - uyren_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: uyren_backend_prod
+    env_file:
+      - ./backend/.env.production
+    environment:
+      - WAIT_FOR_DB=true
+      - RUN_MAKEMIGRATIONS=false
+      - RUN_MIGRATIONS=true
+      - RUN_COLLECTSTATIC=true
+      - CREATE_SUPERUSER=false
+      - LOAD_FIXTURES=false
+    volumes:
+      - uyren_backend_static:/app/staticfiles
+      - uyren_backend_media:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - uyren_network
+    restart: unless-stopped
+    command: ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "config.wsgi:application"]
+
+  nginx:
+    image: nginx:alpine
+    container_name: uyren_nginx_prod
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+      - uyren_backend_static:/app/staticfiles
+      - uyren_backend_media:/app/media
+    depends_on:
+      - backend
+    networks:
+      - uyren_network
+    restart: unless-stopped
+
+volumes:
+  uyren_postgres_data:
+  uyren_backend_static:
+  uyren_backend_media:
+
+networks:
+  uyren_network:
+    driver: bridge
