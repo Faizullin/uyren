@@ -7,6 +7,7 @@ import { cookies } from 'next/headers';
 import NextTopLoader from 'nextjs-toploader';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import "./globals.css";
+import Head from "next/head";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,9 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+      <Head>
+        <meta httpEquiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+      </Head>
         <NextTopLoader showSpinner={false} />
         <NuqsAdapter>
           <ThemeProvider
