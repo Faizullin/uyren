@@ -31,7 +31,7 @@ services:
       - CREATE_SUPERUSER=false
       - LOAD_FIXTURES=false
     ports:
-      - "80:8000"
+      - "8000:8000"
     volumes:
       - uyren_backend_static:/app/staticfiles
       - uyren_backend_media:/app/media
@@ -41,7 +41,9 @@ services:
     networks:
       - uyren_network
     restart: unless-stopped
-    command: ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "config.wsgi:application"]
+    # command: ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "config.wsgi:application"]
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
 
   code-execution-service:
     build:
@@ -65,11 +67,26 @@ services:
     networks:
       - uyren_network
     restart: unless-stopped
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
   redis:
     image: redis:7-alpine
     container_name: uyren_redis_prod
     volumes:
       - uyren_redis_data:/data
+    networks:
+      - uyren_network
+    restart: unless-stopped
+  nginx:
+    image: nginx:alpine
+    container_name: uyren_nginx_prod
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - uyren_backend_static:/app/staticfiles:ro
+      - uyren_backend_media:/app/media:ro
+    depends_on:
+      - backend
     networks:
       - uyren_network
     restart: unless-stopped

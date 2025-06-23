@@ -65,6 +65,8 @@ services:
     networks:
       - uyren_network
     restart: unless-stopped
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
+
   # Redis for code execution service
   redis:
     image: redis:7-alpine
