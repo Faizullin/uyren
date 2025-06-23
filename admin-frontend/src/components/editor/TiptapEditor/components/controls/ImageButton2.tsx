@@ -1,10 +1,9 @@
+import { MediaLibraryDialog } from "@/components/editor/media-gallery/media-library-dialog";
 import useModal from "@/components/editor/TiptapEditor/hooks/useModal";
 import { useEditorState } from "@tiptap/react";
 import MenuButton from "../MenuButton";
 import { useTiptapContext } from "../Provider";
 
-// import Dialog from "@/components/editor/TiptapEditor/components/ui/Dialog";
-// import MediaLibrary from "@/components/MediaLibrary";
 
 const ImageButton = () => {
   const { editor } = useTiptapContext();
@@ -31,13 +30,31 @@ const ImageButton = () => {
             .focus()
             .insertImage({
               src: image.url,
-              width: image.width,
-              height: image.height,
+              // width: image.width,
+              // height: image.height,
             })
             .run();
           handleClose();
         }} />
       </Dialog> */}
+      <MediaLibraryDialog
+        open={open}
+        onOpenChange={(v) => v ? handleOpen() : handleClose()}
+        onInsert={(image) => {
+          editor
+            .chain()
+            .focus()
+            .insertImage({
+              src: image.url,
+              alt: image.alt_text || image.title,
+            })
+            .run();
+          handleClose();
+        }}
+        config={{
+          initialFileType: "image",
+        }}
+      />
     </>
   );
 };

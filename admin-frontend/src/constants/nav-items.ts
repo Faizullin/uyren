@@ -10,12 +10,27 @@ export const navItems: NavItem[] = [
         items: [] // Empty array as there are no child items for Dashboard
     },
     {
-        title: 'Product',
-        url: '/dashboard/product',
-        icon: 'product',
+        title: 'Posts',
+        url: '/dashboard/posts',
+        icon: 'posts',
         shortcut: ['p', 'p'],
         isActive: false,
         items: [] // No child items
+    },
+    {
+        title: 'LMS',
+        url: '#',
+        icon: 'lms',
+        isActive: false,
+
+        items: [
+            {
+                title: 'Courses',
+                url: '/dashboard/lms/courses',
+                icon: 'courses',
+                shortcut: ['l', 'l']
+            },
+        ]
     },
     {
         title: 'Account',

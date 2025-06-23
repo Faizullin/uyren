@@ -16,7 +16,6 @@ class AttachmentSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False
     )
-    uploaded_by_name = serializers.CharField(source='uploaded_by.full_name', read_only=True)
     file_extension = serializers.CharField(read_only=True)
     file_url = serializers.CharField(read_only=True)
     
@@ -25,7 +24,7 @@ class AttachmentSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'file', 'original_filename', 'file_size',
             'file_type', 'mime_type', 'title', 'description', 'alt_text',
-            'content_type', 'object_id', 'uploaded_by', 'uploaded_by_name',
+            'content_type', 'object_id', 'uploaded_by',
             'is_public', 'is_featured', 'file_extension', 'file_url',
             'tags', 'tag_ids', 'created_at', 'updated_at'
         ]
@@ -78,13 +77,12 @@ class AttachmentUploadSerializer(serializers.ModelSerializer):
 
 class AttachmentListSerializer(serializers.ModelSerializer):
     """Simplified serializer for listing attachments"""
-    uploaded_by_name = serializers.CharField(source='uploaded_by.full_name', read_only=True)
     file_url = serializers.CharField(read_only=True)
     
     class Meta:
         model = Attachment
         fields = [
             'id', 'title', 'original_filename',
-            'file_type', 'uploaded_by_name', 'is_public', 'is_featured',
+            'file_type', 'is_public', 'is_featured',
             'file_url', 'created_at'
         ]

@@ -36,7 +36,7 @@ export default function SignInViewPage() {
     const signInWithEmailPasswordMutation = useMutation({
         mutationFn: login,
         onSuccess: () => {
-            router.push('/dashboard');
+            router.push('/dashboard/overview');
         },
         onError: (error) => {
             if (error instanceof FirebaseError) {
@@ -63,7 +63,7 @@ export default function SignInViewPage() {
     const signInWithGoogleMutation = useMutation({
         mutationFn: signInWithGoogle,
         onSuccess: () => {
-            router.push('/dashboard');
+            router.push('/dashboard/overview');
         },
         onError: (error) => {
             if (error instanceof FirebaseError) {

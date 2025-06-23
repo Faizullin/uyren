@@ -1,0 +1,369 @@
+{
+  "name": "lessons",
+  "title": "Lessons",
+  "description": "Manage your educational lessons with advanced filtering and organization.",
+  "api": {
+    "endpoint": "/lms/lessons/",
+    "idField": "id",
+    "searchField": "title",
+    "sortField": "created_at",
+    "sortOrder": "desc"
+  },
+  "permissions": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true,
+    "export": true,
+    "import": false
+  },
+  "form": {
+    "columns": 2,
+    "fields": [
+      {
+        "key": "title",
+        "label": "Lesson Title",
+        "type": "text",
+        "required": true,
+        "placeholder": "Enter lesson title...",
+        "description": "The main title of your lesson (3-200 characters)",
+        "validation": {
+          "min": 3,
+          "max": 200
+        },
+        "column": 2
+      },
+      {
+        "key": "slug",
+        "label": "URL Slug",
+        "type": "text",
+        "required": true,
+        "placeholder": "auto-generated-from-title",
+        "description": "URL-friendly version of the title (auto-generated)",
+        "validation": {
+          "min": 3,
+          "max": 200,
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "column": 1
+      },
+      {
+        "key": "status",
+        "label": "Status",
+        "type": "select",
+        "required": true,
+        "placeholder": "Select status",
+        "validation": {
+          "options": [
+            { "label": "Draft", "value": "draft" },
+            { "label": "Published", "value": "published" },
+            { "label": "Archived", "value": "archived" }
+          ]
+        },
+        "defaultValue": "draft",
+        "column": 1
+      },
+      {
+        "key": "difficulty",
+        "label": "Difficulty Level",
+        "type": "select",
+        "required": false,
+        "validation": {
+          "options": [
+            { "label": "Beginner", "value": "beginner" },
+            { "label": "Intermediate", "value": "intermediate" },
+            { "label": "Advanced", "value": "advanced" },
+            { "label": "Expert", "value": "expert" }
+          ]
+        },
+        "column": 1
+      },
+      {
+        "key": "duration",
+        "label": "Duration (minutes)",
+        "type": "number",
+        "required": false,
+        "placeholder": "Enter duration in minutes",
+        "validation": {
+          "min": 1,
+          "max": 600
+        },
+        "column": 1
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "type": "textarea",
+        "required": false,
+        "placeholder": "Brief description of the lesson...",
+        "description": "Short description of the lesson (max 500 characters)",
+        "validation": {
+          "max": 500
+        },
+        "column": 2
+      },
+      {
+        "key": "prerequisites",
+        "label": "Prerequisites",
+        "type": "textarea",
+        "required": false,
+        "placeholder": "List any prerequisites...",
+        "column": 2
+      },
+      {
+        "key": "is_featured",
+        "label": "Featured Lesson",
+        "type": "boolean",
+        "required": false,
+        "defaultValue": false,
+        "column": 1
+      },
+      {
+        "key": "is_free",
+        "label": "Free Access",
+        "type": "boolean",
+        "required": false,
+        "defaultValue": false,
+        "column": 1
+      },
+      {
+        "key": "thumbnail_url",
+        "label": "Thumbnail URL",
+        "type": "url",
+        "required": false,
+        "placeholder": "https://example.com/thumbnail.jpg",
+        "column": 2
+      },
+      {
+        "key": "video_url",
+        "label": "Video URL",
+        "type": "url",
+        "required": false,
+        "placeholder": "https://youtube.com/watch?v=...",
+        "column": 2
+      }
+    ],
+    "sections": [
+      {
+        "title": "Basic Information",
+        "description": "Essential lesson details",
+        "fields": ["title", "slug", "status", "difficulty", "duration"]
+      },
+      {
+        "title": "Content",
+        "description": "Lesson content and description",
+        "fields": ["description", "prerequisites"]
+      },
+      {
+        "title": "Settings",
+        "description": "Visibility and access settings",
+        "fields": ["is_featured", "is_free"]
+      },
+      {
+        "title": "Media",
+        "description": "Images and video content",
+        "fields": ["thumbnail_url", "video_url"]
+      }
+    ]
+  },
+  "table": {
+    "columns": [
+      {
+        "key": "id",
+        "label": "ID",
+        "type": "number",
+        "sortable": true,
+        "width": 60
+      },
+      {
+        "key": "title",
+        "label": "Title",
+        "type": "text",
+        "sortable": true,
+        "searchable": true,
+        "render": "link"
+      },
+      {
+        "key": "status",
+        "label": "Status",
+        "type": "badge",
+        "sortable": true,
+        "filterable": true,
+        "badgeConfig": {
+          "variants": {
+            "published": "default",
+            "draft": "secondary",
+            "archived": "outline"
+          },
+          "colors": {
+            "published": "text-green-700 bg-green-100",
+            "draft": "text-yellow-700 bg-yellow-100",
+            "archived": "text-gray-700 bg-gray-100"
+          }
+        },
+        "filterOptions": [
+          { "label": "Published", "value": "published" },
+          { "label": "Draft", "value": "draft" },
+          { "label": "Archived", "value": "archived" }
+        ]
+      },
+      {
+        "key": "difficulty",
+        "label": "Difficulty",
+        "type": "badge",
+        "sortable": true,
+        "filterable": true,
+        "badgeConfig": {
+          "variants": {
+            "beginner": "secondary",
+            "intermediate": "default",
+            "advanced": "outline",
+            "expert": "destructive"
+          }
+        },
+        "filterOptions": [
+          { "label": "Beginner", "value": "beginner" },
+          { "label": "Intermediate", "value": "intermediate" },
+          { "label": "Advanced", "value": "advanced" },
+          { "label": "Expert", "value": "expert" }
+        ]
+      },
+      {
+        "key": "duration",
+        "label": "Duration",
+        "type": "number",
+        "sortable": true,
+        "render": "default"
+      },
+      {
+        "key": "is_featured",
+        "label": "Featured",
+        "type": "boolean",
+        "sortable": true,
+        "filterable": true
+      },
+      {
+        "key": "is_free",
+        "label": "Free",
+        "type": "boolean",
+        "sortable": true,
+        "filterable": true
+      },
+      {
+        "key": "created_at",
+        "label": "Created",
+        "type": "date",
+        "sortable": true,
+        "render": "date"
+      },
+      {
+        "key": "actions",
+        "label": "Actions",
+        "type": "actions",
+        "sortable": false,
+        "width": 100
+      }
+    ],
+    "defaultSort": { "field": "created_at", "order": "desc" },
+    "pageSize": 10,
+    "selectable": true,
+    "exportable": true
+  },
+  "filters": [
+    {
+      "key": "search",
+      "label": "Search",
+      "type": "text",
+      "placeholder": "Search lessons...",
+      "icon": "search"
+    },
+    {
+      "key": "status",
+      "label": "Status",
+      "type": "select",
+      "options": [
+        { "label": "Published", "value": "published" },
+        { "label": "Draft", "value": "draft" },
+        { "label": "Archived", "value": "archived" }
+      ]
+    },
+    {
+      "key": "difficulty",
+      "label": "Difficulty",
+      "type": "select",
+      "options": [
+        { "label": "Beginner", "value": "beginner" },
+        { "label": "Intermediate", "value": "intermediate" },
+        { "label": "Advanced", "value": "advanced" },
+        { "label": "Expert", "value": "expert" }
+      ]
+    },
+    {
+      "key": "is_featured",
+      "label": "Featured Only",
+      "type": "boolean"
+    },
+    {
+      "key": "is_free",
+      "label": "Free Only",
+      "type": "boolean"
+    }
+  ],
+  "actions": [
+    {
+      "key": "create",
+      "label": "Create Lesson",
+      "type": "create",
+      "icon": "plus",
+      "variant": "default"
+    },
+    {
+      "key": "edit",
+      "label": "Edit",
+      "type": "edit",
+      "icon": "edit",
+      "variant": "ghost"
+    },
+    {
+      "key": "view",
+      "label": "View",
+      "type": "view",
+      "icon": "eye",
+      "variant": "ghost"
+    },
+    {
+      "key": "delete",
+      "label": "Delete",
+      "type": "delete",
+      "icon": "trash",
+      "variant": "ghost",
+      "bulk": true,
+      "confirmation": {
+        "title": "Delete Lesson",
+        "description": "Are you sure you want to delete this lesson? This action cannot be undone.",
+        "confirmLabel": "Delete",
+        "cancelLabel": "Cancel"
+      }
+    },
+    {
+      "key": "duplicate",
+      "label": "Duplicate",
+      "type": "custom",
+      "icon": "copy",
+      "variant": "outline",
+      "bulk": true,
+      "endpoint": "/api/lessons/duplicate/",
+      "method": "POST"
+    },
+    {
+      "key": "publish",
+      "label": "Publish",
+      "type": "custom",
+      "icon": "send",
+      "variant": "default",
+      "bulk": true,
+      "endpoint": "/api/lessons/publish/",
+      "method": "PATCH"
+    }
+  ]
+}

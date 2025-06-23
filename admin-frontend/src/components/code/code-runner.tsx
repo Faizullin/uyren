@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Play, Square, Download, Upload } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Play, Square } from 'lucide-react';
+import React, { useCallback, useState } from 'react';
 import { useCodeExecution } from './hooks/useCodeExecution';
-import { SUPPORTED_LANGUAGES, ExecutionResult, ExecutionStatus } from './types/code-runner.types';
+import { ExecutionStatus, SUPPORTED_LANGUAGES } from './types/code-runner.types';
 
 interface CodeRunnerProps {
   initialCode?: string;
@@ -25,7 +25,7 @@ export const CodeRunner: React.FC<CodeRunnerProps> = ({
   const [code, setCode] = useState(initialCode);
   const [language, setLanguage] = useState(initialLanguage);
   const [input, setInput] = useState('');
-  
+
   const {
     result,
     isExecuting,
@@ -36,7 +36,7 @@ export const CodeRunner: React.FC<CodeRunnerProps> = ({
 
   const handleRun = useCallback(async () => {
     if (!code.trim()) return;
-    
+
     await executeCode({
       code,
       language,
@@ -91,7 +91,7 @@ export const CodeRunner: React.FC<CodeRunnerProps> = ({
             </SelectContent>
           </Select>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Button
             onClick={handleRun}
@@ -101,7 +101,7 @@ export const CodeRunner: React.FC<CodeRunnerProps> = ({
             <Play className="w-4 h-4" />
             {isExecuting ? 'Running...' : 'Run'}
           </Button>
-          
+
           {isExecuting && (
             <Button
               onClick={handleStop}
@@ -138,7 +138,7 @@ export const CodeRunner: React.FC<CodeRunnerProps> = ({
           <TabsTrigger value="output">Output</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="input" className="space-y-2">
           <Card>
             <CardHeader>
@@ -155,7 +155,7 @@ export const CodeRunner: React.FC<CodeRunnerProps> = ({
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="output" className="space-y-2">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -177,14 +177,14 @@ export const CodeRunner: React.FC<CodeRunnerProps> = ({
                   Run your code to see the output
                 </div>
               )}
-              
+
               {isExecuting && (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                   <p className="mt-2 text-sm text-muted-foreground">Executing code...</p>
                 </div>
               )}
-              
+
               {result && (
                 <div className="space-y-4">
                   {result.output && (
@@ -195,7 +195,7 @@ export const CodeRunner: React.FC<CodeRunnerProps> = ({
                       </pre>
                     </div>
                   )}
-                  
+
                   {result.error && (
                     <div>
                       <h4 className="text-sm font-medium mb-2 text-red-600">Error:</h4>
@@ -204,7 +204,7 @@ export const CodeRunner: React.FC<CodeRunnerProps> = ({
                       </pre>
                     </div>
                   )}
-                  
+
                   {result.compilationInfo && (
                     <div>
                       <h4 className="text-sm font-medium mb-2">Compilation Info:</h4>
@@ -213,7 +213,7 @@ export const CodeRunner: React.FC<CodeRunnerProps> = ({
                       </pre>
                     </div>
                   )}
-                  
+
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
                       <span className="font-medium">Memory Used:</span> {result.memoryUsed || 'N/A'}
@@ -227,7 +227,7 @@ export const CodeRunner: React.FC<CodeRunnerProps> = ({
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="history" className="space-y-2">
           <Card>
             <CardHeader>

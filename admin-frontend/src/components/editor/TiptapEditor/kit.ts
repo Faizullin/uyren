@@ -51,7 +51,7 @@ const ExtensionKit = [
   ListKeymap,
   Link,
   Image,
-  // ImageFigure,
+  ImageFigure,
   CodeBlock,
   Youtube,
   Table,

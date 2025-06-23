@@ -89,7 +89,9 @@ class Attachment(AbstractTimestampedModel):
             allowed_extensions=ALLOWED_IMAGE_EXTENSIONS + ALLOWED_DOCUMENT_EXTENSIONS
         )]
     )
+    name = models.CharField(max_length=25, default='')
     original_filename = models.CharField(max_length=255)
+    url = models.URLField(max_length=500, blank=True, help_text="External URL if file is hosted elsewhere")
     file_size = models.PositiveIntegerField(help_text="File size in bytes")
     file_type = models.CharField(max_length=20, choices=FILE_TYPE_CHOICES)
     mime_type = models.CharField(max_length=100, blank=True)
@@ -136,6 +138,7 @@ class Attachment(AbstractTimestampedModel):
     def save(self, *args, **kwargs):
         """Override save to auto-populate fields"""
         if self.file and not self.original_filename:
+            self.name = os.path.basename(self.file.name)
             self.original_filename = self.file.name
         
         if self.file and not self.file_size:
@@ -197,13 +200,6 @@ class Attachment(AbstractTimestampedModel):
     def is_document(self):
         """Check if attachment is a document"""
         return self.file_type == 'document'
-    
-    @property
-    def file_url(self):
-        """Get file URL"""
-        if self.file:
-            return self.file.url
-        return None
 
 
 class AttachmentTag(AbstractTimestampedModel):

@@ -1,6 +1,5 @@
 "use client";
 
-import type { Option } from "@/components/data-table/data-table";
 import type { Column } from "@tanstack/react-table";
 import { Check, PlusCircle, XCircle } from "lucide-react";
 
@@ -27,7 +26,7 @@ import * as React from "react";
 interface DataTableFacetedFilterProps<TData, TValue> {
   column?: Column<TData, TValue>;
   title?: string;
-  options: Option[];
+  options: any[];
   multiple?: boolean;
 }
 
@@ -45,7 +44,7 @@ export function DataTableFacetedFilter<TData, TValue>({
   );
 
   const onItemSelect = React.useCallback(
-    (option: Option, isSelected: boolean) => {
+    (option: any, isSelected: boolean) => {
       if (!column) return;
 
       if (multiple) {

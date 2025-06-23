@@ -1,10 +1,10 @@
 'use client';
 
 import { AuthProvider } from '@/contexts/auth-context';
+import NiceModal from '@/contexts/nice-modal-context';
 import { globalQueryErrorHandler } from '@/lib/error-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { useTheme } from 'next-themes';
 import { PropsWithChildren, useState } from 'react';
 import { ActiveThemeProvider } from '../common/active-theme';
 
@@ -14,9 +14,6 @@ export default function Providers({
 }: PropsWithChildren<{
     activeThemeValue: string;
 }>) {
-    // we need the resolvedTheme value to set the baseTheme for clerk based on the dark or light theme
-    const { resolvedTheme } = useTheme();
-
     const [queryClient] = useState(
         () =>
             new QueryClient({
@@ -54,12 +51,14 @@ export default function Providers({
             <ActiveThemeProvider initialTheme={activeThemeValue}>
                 <QueryClientProvider client={queryClient}>
                     <AuthProvider>
-                        {children}
-                        {process.env.NODE_ENV === 'development' && (
-                            <>
-                                <ReactQueryDevtools buttonPosition='bottom-left' />
-                            </>
-                        )}
+                        <NiceModal.Provider>
+                            {children}
+                            {process.env.NODE_ENV === 'development' && (
+                                <>
+                                    <ReactQueryDevtools buttonPosition='bottom-right' />
+                                </>
+                            )}
+                        </NiceModal.Provider>
                     </AuthProvider>
                 </QueryClientProvider>
             </ActiveThemeProvider>

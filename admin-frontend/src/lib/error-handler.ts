@@ -1,5 +1,7 @@
+import { ExternalToast, toast } from 'sonner';
 import { ApiError } from './api';
 import { AuthService } from './auth-service';
+import { ReactNode } from 'react';
 
 // Global error handler for API errors
 export class GlobalErrorHandler {
@@ -41,12 +43,12 @@ export class GlobalErrorHandler {
   /**
    * Handle 401 Unauthorized errors
    */
-  private static handleUnauthorized(error: ApiError): void {
+  private static handleUnauthorized(): void {
     console.warn('Unauthorized access - clearing auth data and redirecting to login');
-    
+
     // Clear authentication data
     AuthService.signOut().catch(console.error);
-    
+
     // Show user-friendly message
     this.showErrorNotification(
       'Session Expired',
@@ -65,7 +67,7 @@ export class GlobalErrorHandler {
    */
   private static handleForbidden(error: ApiError): void {
     console.warn('Access forbidden:', error.message);
-    
+
     this.showErrorNotification(
       'Access Denied',
       'You do not have permission to perform this action.',
@@ -78,9 +80,9 @@ export class GlobalErrorHandler {
    */
   private static handleServerError(error: ApiError): void {
     console.error('Server error:', error);
-    
+
     const isMaintenanceMode = error.status === 503;
-    const message = isMaintenanceMode 
+    const message = isMaintenanceMode
       ? 'The service is temporarily unavailable. Please try again later.'
       : 'A server error occurred. Please try again or contact support if the problem persists.';
 
@@ -96,7 +98,7 @@ export class GlobalErrorHandler {
    */
   private static handleGenericError(error: ApiError): void {
     console.error('API error:', error);
-    
+
     // For client errors (4xx), show the server message
     if (error.isClientError()) {
       this.showErrorNotification(
@@ -126,10 +128,10 @@ export class GlobalErrorHandler {
     // For now, just log to console and show alert
     // In a real app, you'd integrate with a toast notification library
     console.error(`${title}: ${message}`);
-    
+
     // You can uncomment this for development to see notifications
     // alert(`${title}\n\n${message}`);
-    
+
     // TODO: Integrate with a proper notification system like:
     // - react-hot-toast
     // - react-toastify
@@ -148,3 +150,29 @@ export class GlobalErrorHandler {
 
 // Export convenience function for React Query
 export const globalQueryErrorHandler = GlobalErrorHandler.createQueryErrorHandler();
+
+
+
+
+type titleT = (() => ReactNode) | ReactNode;
+
+export function showToast(
+  type: "error" | "success" | "info" | "warning",
+  data: {
+    message: titleT | ReactNode;
+    data?: ExternalToast;
+  }
+) {
+  const defaultDuration = 5000;
+  if (type === "error") {
+    toast.error(data.message, {
+      ...data.data,
+      duration: defaultDuration,
+    });
+  } else {
+    toast.success(data.message, {
+      ...data.data,
+      duration: defaultDuration,
+    });
+  }
+}

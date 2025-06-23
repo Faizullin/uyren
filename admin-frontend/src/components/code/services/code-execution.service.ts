@@ -1,9 +1,9 @@
-import { 
-  ExecutionRequest, 
-  ExecutionResult, 
+import {
+  ExecutionRequest,
+  ExecutionResult,
   ExecutionStatus,
-  IdeoneSubmission,
   IDEONE_LANGUAGE_MAP,
+  IdeoneSubmission,
   getExecutionStatusFromIdeone
 } from '../types/code-runner.types';
 
@@ -15,13 +15,6 @@ const IDEONE_CONFIG = {
   // Note: For production, these should be stored securely on the backend
 };
 
-interface IdeoneApiResponse {
-  error: string;
-  item: Array<{
-    key: string;
-    value: any[];
-  }>;
-}
 
 class CodeExecutionService {
   private async makeIdeoneRequest(endpoint: string, params: Record<string, any>): Promise<any> {
@@ -129,7 +122,7 @@ class CodeExecutionService {
 
     while (Date.now() - startTime < maxWaitTime) {
       const status = await this.getSubmissionStatus(link);
-      
+
       if (status.status === 0) {
         // Execution completed
         return await this.getSubmissionDetails(link);
@@ -164,10 +157,10 @@ class CodeExecutionService {
 
       // Parse the result
       const status = getExecutionStatusFromIdeone(submission.result || 0);
-      
+
       let output = submission.output || '';
       let error = '';
-      let compilationInfo = submission.cmpinfo || '';
+      const compilationInfo = submission.cmpinfo || '';
 
       // Handle different result types
       if (submission.result === 11) {
@@ -199,7 +192,7 @@ class CodeExecutionService {
 
     } catch (error) {
       const executionTime = Date.now() - startTime;
-      
+
       return {
         status: 'error' as ExecutionStatus,
         error: error instanceof Error ? error.message : 'Unknown error occurred',

@@ -4,7 +4,7 @@ from apps.core.models import AbstractTimestampedModel
 
 
 class User(AbstractUser, AbstractTimestampedModel):
-    firebase_uid = models.CharField(max_length=128, unique=True)
+    firebase_uid = models.CharField(max_length=128, unique=True, null=True, blank=True)
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)

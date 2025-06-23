@@ -98,8 +98,7 @@ create_superuser() {
             else
                 python manage.py createsuperuser --noinput \
                     --username "$DJANGO_SUPERUSER_USERNAME" \
-                    --email "$DJANGO_SUPERUSER_EMAIL" \
-                    --firebase_uid "$DJANGO_SUPERUSER_FIREBASE_UID"
+                    --email "$DJANGO_SUPERUSER_EMAIL" 
                 
                 if [ $? -eq 0 ]; then
                     log_info "Superuser created successfully"

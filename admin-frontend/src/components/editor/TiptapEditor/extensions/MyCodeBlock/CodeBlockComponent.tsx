@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from "react";
-import { NodeViewWrapper, NodeViewContent } from "@tiptap/react";
+import { useAsyncCodeExecution } from "@/components/code/code-block/hooks";
+import { Log } from "@/lib/log";
 import { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import { CodeExecutionService } from "../../utils/codeExecution";
+import { NodeViewContent, NodeViewWrapper } from "@tiptap/react";
+import React, { useCallback, useMemo, useState } from "react";
 
 interface CodeBlockProps {
   node: ProseMirrorNode;
@@ -11,115 +12,162 @@ interface CodeBlockProps {
 
 export const CodeBlockComponent: React.FC<CodeBlockProps> = ({
   node,
-  updateAttributes,
-  extension,
 }) => {
-  const [output, setOutput] = useState<string>("");
-  const [isRunning, setIsRunning] = useState(false);
   const [showOutput, setShowOutput] = useState(false);
-  const [lastExecutionTime, setLastExecutionTime] = useState<number | null>(null);
-  const [executionStatus, setExecutionStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
+
+  // Use the execution hook directly
+  const { isExecuting, currentJob, error: executionError, executeCode, cancelExecution, clearError } = useAsyncCodeExecution({
+    onProgress: (status) => {
+      console.log('Code execution progress:', status);
+    },
+    onComplete: (result) => {
+      console.log('Code execution completed:', result);
+      setShowOutput(true);
+    },
+    onError: (error) => {
+      console.error('Code execution error:', error);
+      setShowOutput(true);
+    }
+  });
 
   const language = node.attrs.language || "plaintext";
-  const code = node.textContent;  const executeCode = useCallback(async () => {
+  const code = node.textContent;
+  const settings = node.attrs.settings || {
+    can_edit: false,
+    can_run: false,
+    can_open_editor: false,
+    render_type: "code",
+  };
+
+  // Extract execution state from current job
+  const output = currentJob?.output || "";
+  const jobError = currentJob?.error || executionError?.message || "";
+  const executionTime = currentJob?.executionTime || null;
+  const rawStatus = currentJob?.status || 'idle';
+
+  // Map job status to display status
+  const executionStatus = useMemo(() => {
+    if (rawStatus === 'success') return 'success';
+    if (rawStatus === 'error') return 'error';
+    if (rawStatus === 'waiting') return 'waiting';
+    if (rawStatus === 'running') return 'running';
+    return rawStatus;
+  }, [rawStatus]);
+
+  const handleExecuteCode = useCallback(async () => {
     if (!code.trim()) {
-      setOutput("No code to execute");
-      setShowOutput(true);
-      setExecutionStatus('error');
+      Log.warn("No code to execute");
       return;
     }
 
-    setIsRunning(true);
-    setShowOutput(true);
-    setExecutionStatus('running');
-
     try {
-      const result = await CodeExecutionService.executeCode(code, language);
-      console.log("Execution result:", result);
-      setLastExecutionTime(result.executionTime || 0);
-      
-      if (result.error) {
-        setOutput(`❌ Execution Error:\n${result.error}\n\n⏱️ Execution time: ${result.executionTime}ms`);
-        setExecutionStatus('error');
-      } else {
-        setOutput(`✅ ${result.output}\n\n⏱️ Execution time: ${result.executionTime}ms`);
-        setExecutionStatus('success');
-      }
+      clearError(); // Clear any previous errors
+      await executeCode(code, language);
     } catch (error) {
-      setOutput(`❌ Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
-      setExecutionStatus('error');
-    } finally {
-      setIsRunning(false);
+      Log.error('Code execution failed:', error);
     }
-  }, [code, language]);
+  }, [code, language, executeCode, clearError]);
+
+  const handleCancelExecution = useCallback(async () => {
+    try {
+      await cancelExecution();
+    } catch (error) {
+      Log.error('Failed to cancel execution:', error);
+    }
+  }, [cancelExecution]);
 
   const toggleOutput = useCallback(() => {
     setShowOutput(!showOutput);
   }, [showOutput]);
 
   const clearOutput = useCallback(() => {
-    setOutput("");
     setShowOutput(false);
-  }, []);
+    clearError();
+  }, [clearError]);
 
   return (
     <NodeViewWrapper className="rte-codeblock">
       <div className="rte-codeblock__container">
-        {/* Header with language and controls */}        <div className="rte-codeblock__header">
+        {/* Header with language and controls */}
+        <div className="rte-codeblock__header">
           <div className="rte-codeblock__language">
             <span className="rte-codeblock__language-label">{language}</span>
             {executionStatus !== 'idle' && (
               <span className={`rte-codeblock__status rte-codeblock__status--${executionStatus}`}>
                 {executionStatus === 'running' && '⏳ Running...'}
+                {executionStatus === 'waiting' && '⏳ Waiting...'}
                 {executionStatus === 'success' && '✅ Success'}
                 {executionStatus === 'error' && '❌ Error'}
               </span>
             )}
           </div>
+
           <div className="rte-codeblock__controls">
-            {lastExecutionTime && (
+            {executionTime && (
               <span className="rte-codeblock__execution-time">
-                {lastExecutionTime}ms
+                {executionTime}ms
               </span>
             )}
-            <button
-              className="rte-button rte-button--ghost rte-button--icon-only rte-codeblock__btn"
-              onClick={executeCode}
-              disabled={isRunning}
-              title="Run code"
-            >
-              {isRunning ? (
-                <svg className="rte-codeblock__spinner" width="16" height="16" viewBox="0 0 24 24">
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeDasharray="32"
-                    strokeDashoffset="32"
+
+            {settings.can_run && (
+              <>
+                <button
+                  className="rte-button rte-button--ghost rte-button--icon-only rte-codeblock__btn"
+                  onClick={handleExecuteCode}
+                  disabled={isExecuting}
+                  title="Run code"
+                >
+                  {isExecuting ? (
+                    <svg className="rte-codeblock__spinner" width="16" height="16" viewBox="0 0 24 24">
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeDasharray="32"
+                        strokeDashoffset="32"
+                      >
+                        <animateTransform
+                          attributeName="transform"
+                          type="rotate"
+                          values="0 12 12;360 12 12"
+                          dur="1s"
+                          repeatCount="indefinite"
+                        />
+                      </circle>
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M8 5v14l11-7L8 5z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  )}
+                </button>
+                {isExecuting && (
+                  <button
+                    className="rte-button rte-button--ghost rte-button--icon-only rte-codeblock__btn"
+                    onClick={handleCancelExecution}
+                    title="Cancel execution"
                   >
-                    <animateTransform
-                      attributeName="transform"
-                      type="rotate"
-                      values="0 12 12;360 12 12"
-                      dur="1s"
-                      repeatCount="indefinite"
-                    />
-                  </circle>
-                </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M8 5v14l11-7L8 5z"
-                    fill="currentColor"
-                  />
-                </svg>
-              )}
-            </button>
-            {showOutput && (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M18 6L6 18M6 6l12 12"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                )}
+              </>
+            )}
+            {(showOutput && (output || jobError)) && (
               <>
                 <button
                   className="rte-button rte-button--ghost rte-button--icon-only rte-codeblock__btn"
@@ -161,10 +209,12 @@ export const CodeBlockComponent: React.FC<CodeBlockProps> = ({
           <pre className="rte-codeblock__pre">
             <NodeViewContent as="code" className="rte-codeblock__code" />
           </pre>
-        </div>        {/* Output section */}
-        {showOutput && (
+        </div>
+
+        {/* Output section */}
+        {showOutput && (output || jobError) && (
           <div className={`rte-codeblock__output ${
-            executionStatus === 'error' ? 'rte-codeblock__output--error' : 
+            executionStatus === 'error' ? 'rte-codeblock__output--error' :
             executionStatus === 'success' ? 'rte-codeblock__output--success' : ''
           }`}>
             <div className="rte-codeblock__output-header">
@@ -172,7 +222,7 @@ export const CodeBlockComponent: React.FC<CodeBlockProps> = ({
             </div>
             <div className="rte-codeblock__output-content">
               <pre className="rte-codeblock__output-pre">
-                {output || "No output"}
+                {jobError ? `❌ Error: ${jobError}` : output || "No output"}
               </pre>
             </div>
           </div>

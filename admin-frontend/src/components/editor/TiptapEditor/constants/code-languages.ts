@@ -1,36 +1,15 @@
-// List of languages referenced from https://github.com/wooorm/lowlight#data
-export const CODE_BLOCK_LANGUAGUE_SYNTAX_DEFAULT = "plaintext";
+// Supported languages for code execution
+export const CODE_BLOCK_LANGUAGUE_SYNTAX_DEFAULT = "python";
 
 export const CODE_BLOCK_LANGUAGUES = [
-  { syntax: "bash", alias: "sh", label: "Bash" },
-  { syntax: "c", alias: "h", label: "C" },
-  { syntax: "csharp", alias: "cs, c#, dotnet", label: "C#" },
-  { syntax: "css", label: "CSS" },
-  { syntax: "go", alias: "golang", label: "Go" },
-  { syntax: "graphql", alias: "gql", label: "GraphQL" },
-  { syntax: "java", alias: "jsp", label: "Java" },
-  { syntax: "javascript", alias: "js, jsx, mjs, cjs", label: "Javascript" },
-  { syntax: "json", label: "JSON" },
-  { syntax: "kotlin", alias: "kt, kts", label: "Kotlin" },
-  { syntax: "less", label: "Less" },
-  { syntax: "makefile", alias: "mk, mak, make", label: "Makefile" },
-  { syntax: "markdown", alias: "md, mkdown, mkd", label: "Markdown" },
-  {
-    syntax: "objectivec",
-    alias: "mm, objc, obj-c, obj-c++, objective-c++",
-    label: "Objective-C",
-  },
-  { syntax: "php", label: "PHP" },
-  { syntax: "plaintext", alias: "text, txt", label: "Text" },
-  { syntax: "python", alias: "py, gyp, ipython", label: "Python" },
-  { syntax: "scss", label: "SCSS" },
-  { syntax: "shell", alias: "console, shellsession", label: "Shell" },
-  { syntax: "sql", label: "SQL" },
-  { syntax: "typescript", alias: "ts, tsx", label: "TypeScript" },
-  { syntax: "vbnet", alias: "vb", label: "VB .NET" },
-  {
-    syntax: "xml",
-    alias: "html, xhtml, rss, atom, xjb, xsd, xsl, plist, wsf, svg",
-    label: "HTML, XML",
-  },
+  { syntax: "python", alias: "python3", label: "Python 3.9.7" },
+  { syntax: "python2", label: "Python 2.7.18" },
+  { syntax: "c", label: "C (GCC 4.9)" },
+  { syntax: "cpp", alias: "c++, g++", label: "C++ (G++ 4.9)" },
+  { syntax: "java", label: "Java (OpenJDK 11)" },
+  { syntax: "csharp", alias: "c#, dotnet-csharp", label: "C# (dotnet-csharp-5)" },
+  { syntax: "fsharp", alias: "f#", label: "F# (dotnet-fsharp-5)" },
+  { syntax: "php", label: "PHP 8.1" },
+  { syntax: "ruby", label: "Ruby 3.0.2" },
+  { syntax: "haskell", label: "Haskell 9.2.7" },
 ];

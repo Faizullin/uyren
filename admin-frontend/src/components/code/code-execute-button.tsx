@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Play, Loader2 } from 'lucide-react';
+import { Play } from 'lucide-react';
+import React, { useCallback, useState } from 'react';
 import { CodeRunner } from './code-runner';
 
 interface CodeExecuteButtonProps {
@@ -25,10 +25,6 @@ export const CodeExecuteButton: React.FC<CodeExecuteButtonProps> = ({
 
   const handleRun = useCallback(() => {
     setIsOpen(true);
-  }, []);
-
-  const handleClose = useCallback(() => {
-    setIsOpen(false);
   }, []);
 
   return (

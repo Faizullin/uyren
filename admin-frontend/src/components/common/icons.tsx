@@ -1,6 +1,8 @@
 import {
     IconAlertTriangle,
     IconArrowRight,
+    IconArticle,
+    IconBook,
     IconBrandGithub,
     IconBrandTwitter,
     IconCheck,
@@ -22,6 +24,7 @@ import {
     IconPizza,
     IconPlus,
     IconProps,
+    IconSchool,
     IconSettings,
     IconShoppingBag,
     IconSun,
@@ -66,5 +69,8 @@ export const Icons = {
     laptop: IconDeviceLaptop,
     github: IconBrandGithub,
     twitter: IconBrandTwitter,
-    check: IconCheck
+    check: IconCheck,
+    posts: IconArticle,
+    lms: IconSchool,
+    courses: IconBook,
 };

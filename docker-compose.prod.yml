@@ -1,11 +1,11 @@
 version: '3.8'
 
-services:
+services:  
   db:
     image: postgres:15-alpine
     container_name: uyren_postgres_prod
     env_file:
-      - ./backend/.env.production
+      - ./.env.prod
     volumes:
       - uyren_postgres_data:/var/lib/postgresql/data
     networks:
@@ -16,14 +16,13 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile.prod
     container_name: uyren_backend_prod
     env_file:
-      - ./backend/.env.production
+      - ./.env.prod
     environment:
       - WAIT_FOR_DB=true
       - RUN_MAKEMIGRATIONS=false
@@ -31,6 +30,8 @@ services:
       - RUN_COLLECTSTATIC=true
       - CREATE_SUPERUSER=false
       - LOAD_FIXTURES=false
+    ports:
+      - "80:8000"
     volumes:
       - uyren_backend_static:/app/staticfiles
       - uyren_backend_media:/app/media
@@ -42,19 +43,33 @@ services:
     restart: unless-stopped
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "config.wsgi:application"]
 
-  nginx:
-    image: nginx:alpine
-    container_name: uyren_nginx_prod
+  code-execution-service:
+    build:
+      context: ./code-execution-service
+      dockerfile: Dockerfile.prod
+    container_name: uyren_code_execution_prod
+    env_file:
+      - ./.env.prod
+    environment:
+      - REDIS_URL=${CODE_EXECUTION_REDIS_URL:-redis://redis:6379/1}
+      - HOST=${CODE_EXECUTION_HOST:-0.0.0.0}
+      - PORT=${CODE_EXECUTION_PORT:-8001}
+      - DEBUG=${CODE_EXECUTION_DEBUG:-false}
     ports:
-      - "80:80"
-      - "443:443"
+      - "${CODE_EXECUTION_PORT:-8001}:8001"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/ssl:/etc/nginx/ssl
-      - uyren_backend_static:/app/staticfiles
-      - uyren_backend_media:/app/media
+      - ./code-execution-service/service-account.json:/app/service-account.json
     depends_on:
+      - redis
       - backend
+    networks:
+      - uyren_network
+    restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    container_name: uyren_redis_prod
+    volumes:
+      - uyren_redis_data:/data
     networks:
       - uyren_network
     restart: unless-stopped
@@ -63,6 +78,7 @@ volumes:
   uyren_postgres_data:
   uyren_backend_static:
   uyren_backend_media:
+  uyren_redis_data:
 
 networks:
   uyren_network:

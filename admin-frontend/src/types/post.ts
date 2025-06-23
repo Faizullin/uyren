@@ -13,7 +13,7 @@ export interface Post extends DocumentBase {
     title: string;
     slug: string;
     content?: string;
-    excertp?: string;
+    excerpt?: string;
     status: PublicationStatus;
     post_type: string;
     generic_key?: string;

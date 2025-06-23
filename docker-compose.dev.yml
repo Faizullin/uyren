@@ -5,26 +5,25 @@ services:
     image: postgres:15-alpine
     container_name: uyren_postgres_dev
     env_file:
-      - ./backend/.env    
+      - ./.env.dev    
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - uyren_postgres_data:/var/lib/postgresql/data
     networks:
-      - uyren_network
+      - uyren_network    
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
-
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
     container_name: uyren_backend_dev
     env_file:
-      - ./backend/.env
+      - ./.env.dev
     environment:
       - PYTHONUNBUFFERED=1
     ports:
@@ -41,10 +40,48 @@ services:
     restart: unless-stopped
     command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
+  # Code Execution Microservice (disabled by default)
+  # Uncomment the following section to enable the code execution service  
+  code-execution-service:
+    build:
+      context: ./code-execution-service
+      dockerfile: Dockerfile.dev
+    container_name: uyren_code_execution_dev
+    env_file:
+      - ./.env.dev
+    environment:
+      - REDIS_URL=${CODE_EXECUTION_REDIS_URL:-redis://redis:6379/1}
+      - HOST=${CODE_EXECUTION_HOST:-0.0.0.0}
+      - PORT=${CODE_EXECUTION_PORT:-8001}
+      - DEBUG=${CODE_EXECUTION_DEBUG:-true}
+    ports:
+      - "${CODE_EXECUTION_PORT:-8001}:8001"
+    volumes:
+      - ./code-execution-service:/app
+      - ./code-execution-service/service-account.json:/app/service-account.json
+    depends_on:
+      - redis
+      - backend
+    networks:
+      - uyren_network
+    restart: unless-stopped
+  # Redis for code execution service
+  redis:
+    image: redis:7-alpine
+    container_name: uyren_redis_dev
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - uyren_redis_data:/data
+    networks:
+      - uyren_network
+    restart: unless-stopped
+
 volumes:
   uyren_postgres_data:
   uyren_backend_static:
   uyren_backend_media:
+  uyren_redis_data:
 
 networks:
   uyren_network:

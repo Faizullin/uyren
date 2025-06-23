@@ -54,6 +54,7 @@ THIRD_PARTY_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'django_filters',
+    'drf_standardized_errors',
 ]
 
 LOCAL_APPS = [
@@ -62,6 +63,13 @@ LOCAL_APPS = [
     'apps.attachments',
     'apps.posts',
     'apps.cms',
+    # Learning Management System Apps
+    'apps.courses',
+    'apps.lessons',
+    'apps.enrollments',
+    'apps.assessments',
+    'apps.certificates',
+    'apps.lms',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -166,7 +174,15 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
-    'EXCEPTION_HANDLER': 'apps.core.exceptions.custom_exception_handler',
+    # Use drf-standardized-errors for consistent error responses
+    'EXCEPTION_HANDLER': 'drf_standardized_errors.handler.exception_handler',
+}
+
+# DRF Standardized Errors Configuration
+DRF_STANDARDIZED_ERRORS = {
+    "ENABLE_IN_DEBUG_FOR_UNHANDLED_EXCEPTIONS": True,
+    "EXCEPTION_FORMATTER_CLASS": "drf_standardized_errors.formatter.ExceptionFormatter",
+    "EXCEPTION_HANDLER_CLASS": "drf_standardized_errors.handler.ExceptionHandler",
 }
 
 # CORS settings

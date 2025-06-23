@@ -26,6 +26,7 @@ urlpatterns = [
     path('', include('apps.core.urls')),
     path('', include('apps.posts.urls')),
     path('', include('apps.cms.urls')),
+    path('', include('apps.lms.urls')),
 ]
 
 # Serve media files in development

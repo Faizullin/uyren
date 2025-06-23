@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/constants/api";
 import { AuthService } from "./auth-service";
 
 interface RequestOptions extends RequestInit {
@@ -46,7 +47,6 @@ export class ApiError extends Error {
 }
 
 // API base URL - adjust this to match your Django backend
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const API_PREFIX = "/api/v1";
 const APU_URL = `${API_BASE_URL}${API_PREFIX}`;
 
@@ -57,7 +57,7 @@ function buildUrlWithParams(baseUrl: string, params?: Record<string, any>): stri
   }
 
   const searchParams = new URLSearchParams();
-  
+
   Object.entries(params).forEach(([key, value]) => {
     if (value !== null && value !== undefined && value !== '') {
       if (Array.isArray(value)) {
@@ -77,32 +77,44 @@ export async function simpleRequest<T = any>(
   url: string,
   options: RequestOptions = {}
 ): Promise<T> {
-  const { token, headers, params, ...restOptions } = options;
-  
+  const { token, headers, params, body, ...restOptions } = options;
   // Build URL with query parameters
   const urlWithParams = buildUrlWithParams(url, params);
   const fullUrl = `${APU_URL}${urlWithParams}`;
 
+  // Check if body is FormData
+  const isFormData = body instanceof FormData;
+
   // Default headers
-  const defaultHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
+  const defaultHeaders: Record<string, string> = {};
+
+  // Only set Content-Type for non-FormData requests
+  if (!isFormData) {
+    defaultHeaders["Content-Type"] = "application/json";
+  }
+
   // Add authorization header if token is provided
   if (token) {
     // Use Django's Token authentication format
     defaultHeaders["Authorization"] = `Bearer ${token}`;
   }
 
-  // Merge headers
-  const mergedHeaders = {
+  // Merge headers (but don't override Content-Type for FormData)
+  const mergedHeaders: any = {
     ...defaultHeaders,
     ...headers,
   };
+
+  // Remove Content-Type for FormData to let browser set it with boundary
+  if (isFormData && mergedHeaders["Content-Type"]) {
+    delete mergedHeaders["Content-Type"];
+  }
 
   try {
     const response = await fetch(fullUrl, {
       ...restOptions,
       headers: mergedHeaders,
+      body,
     });
 
     if (!response.ok) {
@@ -147,7 +159,7 @@ export async function simpleRequest<T = any>(
     if (error instanceof ApiError) {
       throw error;
     }
-    
+
     // Handle network errors and other fetch failures
     console.error("Request failed:", error);
     throw new ApiError(
@@ -160,42 +172,62 @@ export async function simpleRequest<T = any>(
   }
 }
 
+// Helper function to prepare request body
+function prepareRequestBody(data: any): any {
+  if (data instanceof FormData) {
+    // Return FormData as-is
+    return data;
+  } else if (data === null || data === undefined) {
+    // Return undefined for null/undefined
+    return undefined;
+  } else {
+    // JSON stringify for regular objects
+    return JSON.stringify(data);
+  }
+}
+
 // Convenience methods
 export const api = {
-  get: <T = any>(url: string, params?: Record<string, any>, token?: string) => {
+  get: <T = any>(url: string, props?: { params?: Record<string, any> }) => {
     // Auto-include token from localStorage if not provided
-    const authToken = token || (typeof window !== 'undefined' ? AuthService.getAuthStorageData().token : null);
-    return simpleRequest<T>(url, { method: "GET", params, token: authToken || undefined });
+    const authToken = (typeof window !== 'undefined' ? AuthService.getAuthStorageData().token : null);
+    return simpleRequest<T>(url, { method: "GET", params: props?.params || {}, token: authToken || undefined });
   },
 
-  post: <T = any>(url: string, data: any, params?: Record<string, any>, token?: string) => {
+  post: <T = any>(url: string, data?: any, params?: Record<string, any>) => {
     // Auto-include token from localStorage if not provided
-    const authToken = token || (typeof window !== 'undefined' ? AuthService.getAuthStorageData().token : null);
+    const authToken = (typeof window !== 'undefined' ? AuthService.getAuthStorageData().token : null);
+    const body = prepareRequestBody(data);
+
     return simpleRequest<T>(url, {
       method: "POST",
-      body: JSON.stringify(data),
+      body,
       params,
       token: authToken || undefined,
     });
   },
 
-  put: <T = any>(url: string, data: any, params?: Record<string, any>, token?: string) => {
+  put: <T = any>(url: string, data?: any, params?: Record<string, any>) => {
     // Auto-include token from localStorage if not provided
-    const authToken = token || (typeof window !== 'undefined' ? AuthService.getAuthStorageData().token : null);
+    const authToken = (typeof window !== 'undefined' ? AuthService.getAuthStorageData().token : null);
+    const body = prepareRequestBody(data);
+
     return simpleRequest<T>(url, {
       method: "PUT",
-      body: JSON.stringify(data),
+      body,
       params,
       token: authToken || undefined,
     });
   },
 
-  patch: <T = any>(url: string, data: any, params?: Record<string, any>, token?: string) => {
+  patch: <T = any>(url: string, data?: any, params?: Record<string, any>, token?: string) => {
     // Auto-include token from localStorage if not provided
     const authToken = token || (typeof window !== 'undefined' ? AuthService.getAuthStorageData().token : null);
+    const body = prepareRequestBody(data);
+
     return simpleRequest<T>(url, {
       method: "PATCH",
-      body: JSON.stringify(data),
+      body,
       params,
       token: authToken || undefined,
     });

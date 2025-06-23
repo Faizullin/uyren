@@ -137,6 +137,14 @@ export class AuthService {
         return this.currentFirebaseUser || firebaseAuth.currentUser;
     }
 
+    static async getCurrentFirebaseUserToken() {
+        const user = this.getCurrentFirebaseUser();
+        if (!user) {
+            return null;
+        }
+        return await user.getIdToken()
+    }
+
     /**
      * Refresh Firebase token and re-authenticate with backend
      */
@@ -163,8 +171,8 @@ export class AuthService {
      * Get current authentication state
      */
     static getAuthStorageData(): { isAuthenticated: boolean; token: string | null; user: any | null } {
-        let data = localStorage.getItem('auth_data');
-        let response: AuthStorageData = {
+        const data = localStorage.getItem('auth_data');
+        const response: AuthStorageData = {
             user: null,
             token: null,
             isAuthenticated: false,

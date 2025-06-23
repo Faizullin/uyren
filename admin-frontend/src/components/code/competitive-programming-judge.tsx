@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle, XCircle, AlertCircle, Clock, MemoryStick } from 'lucide-react';
-import { 
-  competitiveProgrammingService, 
-  JudgeRequest, 
-  JudgeResult, 
-  TestCase 
+import { AlertCircle, CheckCircle, Clock, XCircle } from 'lucide-react';
+import React, { useCallback, useState } from 'react';
+import {
+  competitiveProgrammingService,
+  JudgeRequest,
+  JudgeResult,
+  TestCase
 } from './services/competitive-programming.service';
 
 interface CompetitiveProgrammingJudgeProps {
@@ -63,7 +63,7 @@ export const CompetitiveProgrammingJudge: React.FC<CompetitiveProgrammingJudgePr
           code,
           language
         });
-        
+
         await competitiveProgrammingService.updateUserStats(userId);
       }
 
@@ -77,7 +77,7 @@ export const CompetitiveProgrammingJudge: React.FC<CompetitiveProgrammingJudgePr
         totalTests: testCases.length,
         color: 'red'
       };
-      
+
       setResult(errorResult);
     } finally {
       setIsJudging(false);
@@ -135,7 +135,7 @@ export const CompetitiveProgrammingJudge: React.FC<CompetitiveProgrammingJudgePr
             className="min-h-[300px] font-mono text-sm"
             disabled={isJudging}
           />
-          
+
           <div className="flex justify-end">
             <Button
               onClick={handleSubmit}
@@ -197,7 +197,7 @@ export const CompetitiveProgrammingJudge: React.FC<CompetitiveProgrammingJudgePr
                       <TabsTrigger value="summary">Summary</TabsTrigger>
                       <TabsTrigger value="details">Test Details</TabsTrigger>
                     </TabsList>
-                    
+
                     <TabsContent value="summary" className="space-y-2">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div className="text-center p-3 bg-muted rounded">
@@ -220,17 +220,16 @@ export const CompetitiveProgrammingJudge: React.FC<CompetitiveProgrammingJudgePr
                         </div>
                       </div>
                     </TabsContent>
-                    
+
                     <TabsContent value="details" className="space-y-2">
                       <div className="space-y-2 max-h-[400px] overflow-auto">
                         {result.testResults.map((test, index) => (
-                          <div 
+                          <div
                             key={index}
-                            className={`p-3 rounded border ${
-                              test.passed 
-                                ? 'bg-green-50 border-green-200' 
+                            className={`p-3 rounded border ${test.passed
+                                ? 'bg-green-50 border-green-200'
                                 : 'bg-red-50 border-red-200'
-                            }`}
+                              }`}
                           >
                             <div className="flex items-center justify-between mb-2">
                               <span className="font-medium">Test Case {index + 1}</span>
@@ -240,7 +239,7 @@ export const CompetitiveProgrammingJudge: React.FC<CompetitiveProgrammingJudgePr
                                 <XCircle className="w-4 h-4 text-red-600" />
                               )}
                             </div>
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
                               <div>
                                 <div className="font-medium">Input:</div>

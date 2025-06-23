@@ -90,6 +90,12 @@ class Post(AbstractTimestampedModel):
     object_id = models.PositiveIntegerField(null=True, blank=True)
     content_object = GenericForeignKey('content_type', 'object_id')
     
+    post_type = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+    )
+    
     # Meta fields
     is_featured = models.BooleanField(default=False)
     is_pinned = models.BooleanField(default=False)

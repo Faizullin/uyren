@@ -10,131 +10,200 @@ from apps.attachments.models import Attachment
 
 
 class AttachmentSerializer(serializers.ModelSerializer):
-    """Serializer for Attachment model"""
-    
-    uploaded_by_name = serializers.CharField(source='uploaded_by.display_name', read_only=True)
-    file_url = serializers.SerializerMethodField()
+    """Serializer for Attachment model - for listing and viewing"""
     
     class Meta:
         model = Attachment
         fields = [
-            'id', 'title', 'description', 'file', 'file_type', 'file_size',
-            'file_size_human', 'mime_type', 'is_public', 'alt_text',
-            'uploaded_by', 'uploaded_by_name', 'file_url', 'created_at', 'updated_at'
+            'id', 'title', 'description', 'alt_text','name', 'original_filename',
+            'url', 'file_type', 'file_size', 'file_size_human', 'mime_type', 
+            'is_public', 'is_featured', 'uploaded_by', 
+            'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'id', 'file_size', 'file_size_human', 'mime_type',
-            'uploaded_by', 'uploaded_by_name', 'file_url', 'created_at', 'updated_at'
+            'id', 'name', 'file_type', 'file_size', 'file_size_human', 
+            'mime_type', 'uploaded_by', 'created_at', 'updated_at'
         ]
+
+
+class AttachmentUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for updating attachment metadata only"""
     
-    def get_file_url(self, obj):
-        """Get file URL"""
-        if obj.file:
-            return obj.file.url
-        return None
+    class Meta:
+        model = Attachment
+        fields = ['title', 'description', 'alt_text', 'is_public', 'is_featured']
+
+
+class AttachmentUploadSerializer(serializers.ModelSerializer):
+    """Serializer for uploading new attachments"""
+    
+    file = serializers.FileField(required=True, allow_empty_file=False, write_only=True)
+    
+    class Meta:
+        model = Attachment
+        fields = ['file', 'title', 'description', 'alt_text', 'is_public', 'is_featured']
+        
+    def validate_file(self, value):
+        """Validate uploaded file"""
+        if not value:
+            raise serializers.ValidationError("File is required.")
+        
+        max_size = 10 * 1024 * 1024  # 10MB
+        if hasattr(value, 'size') and value.size > max_size:
+            raise serializers.ValidationError("File size cannot exceed 10MB.")
+            
+        return value
     
     def create(self, validated_data):
         """Create attachment with file metadata"""
-        # Get file metadata
         file_obj = validated_data.get('file')
         if file_obj:
             validated_data['file_size'] = file_obj.size
             validated_data['mime_type'] = getattr(file_obj, 'content_type', '')
+            validated_data['original_filename'] = file_obj.name
         
-        return super().create(validated_data)
+        attachment = super().create(validated_data)
+        # Update URL field with full file URL
+        if attachment.file:
+            request = self.context.get('request')
+            if request:
+                attachment.url = request.build_absolute_uri(attachment.file.url)
+            else:
+                attachment.url = attachment.file.url
+            attachment.save(update_fields=['url'])
+        
+        return attachment
+    
+    def update(self, instance, validated_data):
+        """Update attachment with new file"""
+        file_obj = validated_data.get('file')
+        if file_obj:
+            validated_data['file_size'] = file_obj.size
+            validated_data['mime_type'] = getattr(file_obj, 'content_type', '')
+            validated_data['original_filename'] = file_obj.name
+        
+        attachment = super().update(instance, validated_data)
+        # Update URL field with full file URL
+        if attachment.file:
+            request = self.context.get('request')
+            if request:
+                attachment.url = request.build_absolute_uri(attachment.file.url)
+            else:
+                attachment.url = attachment.file.url
+            attachment.save(update_fields=['url'])
+        
+        return attachment
 
 
+class AttachmentReplaceSerializer(serializers.ModelSerializer):
+    """Serializer for replacing attachment file only"""
+    
+    file = serializers.FileField(
+        required=True, 
+        allow_empty_file=False, 
+        write_only=True,
+        help_text="Upload a new file to replace the existing attachment."
+    )
+    
+    class Meta:
+        model = Attachment
+        fields = ['file']
+        
+    def validate_file(self, value):
+        """Validate replacement file"""
+        if not value:
+            raise serializers.ValidationError("File is required for replacement.")
+        
+        max_size = 10 * 1024 * 1024  # 10MB
+        if hasattr(value, 'size') and value.size > max_size:
+            raise serializers.ValidationError("File size cannot exceed 10MB.")
+            
+        return value
+    
+    def update(self, instance, validated_data):
+        """Update file and related metadata"""
+        file_obj = validated_data.get('file')
+        if file_obj:
+            instance.file = file_obj
+            instance.file_size = file_obj.size
+            instance.mime_type = getattr(file_obj, 'content_type', '')
+            instance.original_filename = file_obj.name
+            # Update URL field with full file URL
+            request = self.context.get('request')
+            if request:
+                instance.url = request.build_absolute_uri(instance.file.url)
+            else:
+                instance.url = instance.file.url
+            instance.save()
+        
+        return instance
+
+
+class PostAuthorSerializer(serializers.ModelSerializer):
+    """Serializer for Post author details"""
+    
+    class Meta:
+        model = Post.author.field.related_model
+        fields = ['id', 'username', 'email']
+        read_only_fields = ['id', 'username', 'email']
+            
 class PostListSerializer(serializers.ModelSerializer):
     """Serializer for Post model in list views"""
     
-    author_name = serializers.CharField(source='author.display_name', read_only=True)
-    attachment_count = serializers.SerializerMethodField()
+    author = PostAuthorSerializer(read_only=True)
     
     class Meta:
         model = Post
         fields = [
             'id', 'title', 'slug', 'excerpt', 'status', 'is_featured', 'is_pinned',
-            'published_at', 'view_count', 'like_count', 'author', 'author_name',
-            'attachment_count', 'created_at'
+            'published_at', 'view_count', 'like_count', 'author',  'created_at',   'post_type',
         ]
         read_only_fields = [
-            'id', 'slug', 'author', 'author_name', 'view_count', 'like_count',
-            'attachment_count', 'created_at'
+            'id', 'slug', 'author', 'view_count', 'like_count', 'created_at',
+             'post_type', 'status', 'published_at', 
         ]
-    
-    def get_attachment_count(self, obj):
-        """Get the number of attachments for this post"""
-        return obj.attachments.count()
+
 
 
 class PostDetailSerializer(PostListSerializer):
     """Serializer for Post model in detail views"""
     
+    author = PostAuthorSerializer(read_only=True)
     attachments = AttachmentSerializer(many=True, read_only=True)
     
     class Meta(PostListSerializer.Meta):
         fields = PostListSerializer.Meta.fields + [
-            'content', 'meta_title', 'meta_description',
+            'meta_title', 'meta_description',
             'attachments', 'updated_at'
         ]
         read_only_fields = PostListSerializer.Meta.read_only_fields + [
-            'attachments', 'updated_at'
+            'attachments', 'updated_at',
         ]
 
 
 class PostCreateUpdateSerializer(serializers.ModelSerializer):
     """Serializer for creating and updating Posts"""
     
-    attachment_ids = serializers.ListField(
-        child=serializers.UUIDField(),
-        write_only=True,
-        required=False,
-        help_text="List of attachment IDs to associate with this post"    )
-    
     class Meta:
         model = Post
         fields = [
-            'title', 'content', 'excerpt', 'status', 'is_featured', 'is_pinned',
-            'meta_title', 'meta_description', 'published_at',
-            'attachment_ids'        ]
+            'title','excerpt', 'status', 'is_featured', 'is_pinned',
+            'meta_title', 'meta_description',
+            ]
+        read_only_fields = ['id', 'status']
+
+
+class PostSaveContentSerializer(serializers.ModelSerializer):
+    """Serializer for saving Post content"""
     
-    def create(self, validated_data):
-        """Create post with attachments"""
-        attachment_ids = validated_data.pop('attachment_ids', [])
+    class Meta:
+        model = Post
+        fields = ['content']
         
-        post = Post.objects.create(**validated_data)
-        
-        # Handle attachments
-        if attachment_ids:
-            attachments = Attachment.objects.filter(id__in=attachment_ids)
-            post.attachments.set(attachments)
-        
-        return post
+
+class PostPublishSerializer(serializers.ModelSerializer):
+    """Serializer for publishing a Post"""
     
-    def update(self, instance, validated_data):
-        """Update post with attachments"""
-        attachment_ids = validated_data.pop('attachment_ids', None)
-        
-        # Update basic fields
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        
-        # Update attachments
-        if attachment_ids is not None:
-            attachments = Attachment.objects.filter(id__in=attachment_ids)
-            instance.attachments.set(attachments)
-        
-        return instance
-    
-    def validate_attachment_ids(self, value):
-        """Validate attachment IDs"""
-        if not isinstance(value, list):
-            raise serializers.ValidationError("Attachment IDs must be a list")
-        
-        # Validate that all attachments exist
-        existing_attachments = Attachment.objects.filter(id__in=value)
-        if len(existing_attachments) != len(value):
-            raise serializers.ValidationError("One or more attachment IDs are invalid")
-        
-        return value
+    class Meta:
+        model = Post
+        fields = [ 'status',]

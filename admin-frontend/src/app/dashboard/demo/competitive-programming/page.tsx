@@ -197,7 +197,7 @@ export default function CompetitiveProgrammingDemo() {
               <h3 className="font-semibold mb-2">📝 Submission Process</h3>
               <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
                 <li>Write your solution in the code editor</li>
-                <li>Click "Submit Solution" to start judging</li>
+                <li>Click Submit Solution to start judging</li>
                 <li>Your code runs against all test cases</li>
                 <li>Get instant feedback on each test case</li>
                 <li>View detailed results and debug information</li>
@@ -213,7 +213,7 @@ export default function CompetitiveProgrammingDemo() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge className="bg-red-100 text-red-800">Wrong Answer</Badge>
-                  <span className="text-muted-foreground">Output doesn't match expected</span>
+                  <span className="text-muted-foreground">Output doesnt match expected</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge className="bg-yellow-100 text-yellow-800">Time Limit Exceeded</Badge>

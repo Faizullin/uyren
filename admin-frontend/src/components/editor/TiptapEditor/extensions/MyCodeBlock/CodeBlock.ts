@@ -23,6 +23,35 @@ export const CodeBlock = TiptapCodeBlockLowlight.extend({
     };
   },
 
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      settings: {
+        default: {
+          can_edit: false,
+          can_run: false,
+          can_open_editor: false,
+          render_type: "code",
+        },
+        parseHTML: (element) => {
+          const settings = element.getAttribute("data-settings");
+          return settings ? JSON.parse(settings) : {
+            can_edit: false,
+            can_run: false,
+            can_open_editor: false,
+            render_type: "code",
+          };
+        },
+        renderHTML: (attributes) => {
+          if (!attributes.settings) return {};
+          return {
+            "data-settings": JSON.stringify(attributes.settings),
+          };
+        },
+      },
+    };
+  },
+
   addInputRules() {
     const findAndLoadLanguage = (match: ExtendedRegExpMatchArray) => {
       const language = findLanguage(match[1]);

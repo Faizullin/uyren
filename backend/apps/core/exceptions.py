@@ -1,16 +1,70 @@
 """
-Core exceptions and error handling for standardized API responses.
+Core exceptions - Migration to drf-standardized-errors
+
+This module has been updated to use drf-standardized-errors library 
+for consistent API error responses across the application.
+
+The drf-standardized-errors library provides:
+- Consistent error response format
+- Proper HTTP status codes  
+- Field-specific validation errors
+- Built-in support for all DRF exceptions
+
+Standard error response format from drf-standardized-errors:
+{
+    "type": "validation_error",
+    "errors": [
+        {
+            "code": "required",
+            "detail": "This field is required.",
+            "attr": "field_name"
+        }
+    ]
+}
+
+For non-field errors:
+{
+    "type": "validation_error", 
+    "errors": [
+        {
+            "code": "invalid",
+            "detail": "Error message",
+            "attr": null
+        }
+    ]
+}
+
+Use standard DRF exceptions directly:
+- rest_framework.exceptions.ValidationError (400)
+- rest_framework.exceptions.AuthenticationFailed (401)
+- rest_framework.exceptions.NotAuthenticated (401)  
+- rest_framework.exceptions.PermissionDenied (403)
+- rest_framework.exceptions.NotFound (404)
+- rest_framework.exceptions.MethodNotAllowed (405)
+- rest_framework.exceptions.Throttled (429)
+- rest_framework.exceptions.APIException (500)
+
+Example usage:
+    from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+    
+    # Field-specific validation error
+    raise ValidationError({'email': ['This field is required.']})
+    
+    # Non-field validation error  
+    raise ValidationError('Invalid data provided.')
+    
+    # Resource not found
+    raise NotFound('User not found.')
+    
+    # Permission denied
+    raise PermissionDenied('You do not have permission to perform this action.')
 """
-from rest_framework.views import exception_handler
-from rest_framework.response import Response
-from rest_framework import status
-from django.http import Http404
-from django.core.exceptions import PermissionDenied, ValidationError as DjangoValidationError
+
 from rest_framework.exceptions import (
     ValidationError,
     AuthenticationFailed,
     NotAuthenticated,
-    PermissionDenied as DRFPermissionDenied,
+    PermissionDenied,
     NotFound,
     MethodNotAllowed,
     NotAcceptable,
@@ -20,343 +74,210 @@ from rest_framework.exceptions import (
     APIException
 )
 import logging
-import traceback
-from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
 
-# Legacy Core Exceptions (keeping for backward compatibility)
+# Legacy Core Exceptions (DEPRECATED - use standard DRF exceptions)
 class CoreException(Exception):
-    """Base exception for core app"""
+    """Base exception for core app - DEPRECATED"""
     pass
 
 
 class ValidationException(CoreException):
-    """Exception raised for validation errors"""
+    """DEPRECATED - Use rest_framework.exceptions.ValidationError"""
     pass
 
 
 class AuthenticationException(CoreException):
-    """Exception raised for authentication errors"""
+    """DEPRECATED - Use rest_framework.exceptions.AuthenticationFailed"""
     pass
 
 
 class PermissionException(CoreException):
-    """Exception raised for permission errors"""
+    """DEPRECATED - Use rest_framework.exceptions.PermissionDenied"""
     pass
 
 
 class NotFoundError(CoreException):
-    """Exception raised when a resource is not found"""
+    """DEPRECATED - Use rest_framework.exceptions.NotFound"""
     pass
 
 
 class DuplicateError(CoreException):
-    """Exception raised when trying to create a duplicate resource"""
+    """DEPRECATED - Use rest_framework.exceptions.ValidationError"""
     pass
 
 
 class FirebaseAuthError(AuthenticationException):
-    """Exception raised for Firebase authentication errors"""
+    """DEPRECATED - Use rest_framework.exceptions.AuthenticationFailed"""
     pass
 
 
 class InvalidTokenError(AuthenticationException):
-    """Exception raised for invalid token errors"""
+    """DEPRECATED - Use rest_framework.exceptions.AuthenticationFailed"""
     pass
 
 
-# DRF API Exceptions for standardized responses
-class APIError(APIException):
-    """Base API error class for custom exceptions."""
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = 'A server error occurred.'
-    default_code = 'error'
-
-    def __init__(self, detail=None, code=None, status_code=None):
-        if status_code:
-            self.status_code = status_code
-        super().__init__(detail, code)
-
-
-class APIValidationError(APIError):
-    """Custom validation error."""
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = 'Invalid input data.'
-    default_code = 'validation_error'
-
-
-class APIAuthenticationError(APIError):
-    """Custom authentication error."""
-    status_code = status.HTTP_401_UNAUTHORIZED
-    default_detail = 'Authentication credentials were not provided or are invalid.'
-    default_code = 'authentication_error'
-
-
-class APIPermissionError(APIError):
-    """Custom permission error."""
-    status_code = status.HTTP_403_FORBIDDEN
-    default_detail = 'You do not have permission to perform this action.'
-    default_code = 'permission_error'
-
-
-class APINotFoundError(APIError):
-    """Custom not found error."""
-    status_code = status.HTTP_404_NOT_FOUND
-    default_detail = 'The requested resource was not found.'
-    default_code = 'not_found'
-
-
-class APIConflictError(APIError):
-    """Custom conflict error."""
-    status_code = status.HTTP_409_CONFLICT
-    default_detail = 'The request could not be completed due to a conflict.'
-    default_code = 'conflict_error'
-
-
-class APIRateLimitError(APIError):
-    """Custom rate limit error."""
-    status_code = status.HTTP_429_TOO_MANY_REQUESTS
-    default_detail = 'Request was throttled. Expected available in %s seconds.'
-    default_code = 'throttled'
-
-
-class APIServerError(APIError):
-    """Custom server error."""
-    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-    default_detail = 'A server error occurred.'
-    default_code = 'server_error'
-
-
-def custom_exception_handler(exc, context) -> Response:
-    """
-    Custom exception handler that returns standardized error responses.
-    
-    Standardized error response format:
-    {
-        "error": {
-            "code": "error_code",
-            "message": "Human readable error message",
-            "details": {...},  # Additional error details
-            "timestamp": "2024-01-01T00:00:00Z",
-            "path": "/api/v1/endpoint/",
-            "method": "POST",
-            "status_code": 400
-        }
-    }
-    """
-    # Get the standard DRF error response
-    response = exception_handler(exc, context)
-    
-    # Get request information
-    request = context.get('request')
-    path = request.path if request else None
-    method = request.method if request else None
-    
-    # Import here to avoid circular imports
-    from django.utils import timezone
-    
-    # Log the exception
-    logger.error(
-        f"API Exception: {exc.__class__.__name__} - {str(exc)}",
-        extra={
-            'exception_type': exc.__class__.__name__,
-            'exception_message': str(exc),
-            'path': path,
-            'method': method,
-            'user': getattr(request, 'user', None) if request else None,
-            'traceback': traceback.format_exc() if not isinstance(exc, (
-                ValidationError, AuthenticationFailed, NotAuthenticated,
-                DRFPermissionDenied, NotFound, MethodNotAllowed
-            )) else None
-        }
-    )
-    
-    if response is not None:
-        # Map DRF exceptions to our error codes and messages
-        error_mapping = {
-            ValidationError: {
-                'code': 'validation_error',
-                'message': 'The provided data is invalid.'
-            },
-            AuthenticationFailed: {
-                'code': 'authentication_failed',
-                'message': 'Authentication credentials are invalid.'
-            },
-            NotAuthenticated: {
-                'code': 'authentication_required',
-                'message': 'Authentication credentials were not provided.'
-            },
-            DRFPermissionDenied: {
-                'code': 'permission_denied',
-                'message': 'You do not have permission to perform this action.'
-            },
-            NotFound: {
-                'code': 'not_found',
-                'message': 'The requested resource was not found.'
-            },
-            MethodNotAllowed: {
-                'code': 'method_not_allowed',
-                'message': f'Method "{method}" not allowed.'
-            },
-            NotAcceptable: {
-                'code': 'not_acceptable',
-                'message': 'The request cannot be fulfilled with the available media types.'
-            },
-            UnsupportedMediaType: {
-                'code': 'unsupported_media_type',
-                'message': 'The media type is not supported.'
-            },
-            Throttled: {
-                'code': 'throttled',
-                'message': 'Request was throttled.'
-            },
-            ParseError: {
-                'code': 'parse_error',
-                'message': 'Malformed request.'
-            }
-        }
-        
-        # Handle our custom API errors
-        if isinstance(exc, APIError):
-            error_code = getattr(exc, 'default_code', 'api_error')
-            error_message = str(exc.detail) if hasattr(exc, 'detail') else str(exc)
-        else:
-            # Handle DRF built-in exceptions
-            error_info = error_mapping.get(exc.__class__, {
-                'code': 'api_error',
-                'message': 'An error occurred.'
-            })
-            error_code = error_info['code']
-            error_message = error_info['message']
-        
-        # Extract details from the original response
-        details = response.data if response.data != error_message else None
-        
-        # Handle validation errors specially to preserve field-specific errors
-        if isinstance(exc, (ValidationError, DjangoValidationError)):
-            if isinstance(response.data, dict):
-                details = response.data
-            elif isinstance(response.data, list):
-                details = {'non_field_errors': response.data}
-            else:
-                details = {'error': response.data}
-        
-        # Handle throttling specially to include wait time
-        if isinstance(exc, Throttled):
-            wait_time = getattr(exc, 'wait', None)
-            if wait_time:
-                error_message = f'Request was throttled. Expected available in {wait_time} seconds.'
-                details = {'wait': wait_time}
-        
-        # Create standardized error response
-        custom_response_data = {
-            'error': {
-                'code': error_code,
-                'message': error_message,
-                'timestamp': timezone.now().isoformat(),
-                'path': path,
-                'method': method,
-                'status_code': response.status_code
-            }
-        }
-        
-        # Add details if available
-        if details:
-            custom_response_data['error']['details'] = details
-        
-        response.data = custom_response_data
-    
-    else:
-        # Handle non-DRF exceptions (Django exceptions)
-        from django.utils import timezone
-        
-        if isinstance(exc, Http404):
-            status_code = status.HTTP_404_NOT_FOUND
-            error_code = 'not_found'
-            error_message = 'The requested resource was not found.'
-        elif isinstance(exc, PermissionDenied):
-            status_code = status.HTTP_403_FORBIDDEN
-            error_code = 'permission_denied'
-            error_message = 'You do not have permission to perform this action.'
-        elif isinstance(exc, DjangoValidationError):
-            status_code = status.HTTP_400_BAD_REQUEST
-            error_code = 'validation_error'
-            error_message = 'The provided data is invalid.'
-        else:
-            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-            error_code = 'server_error'
-            error_message = 'An internal server error occurred.'
-        
-        # Create response for non-DRF exceptions
-        response_data = {
-            'error': {
-                'code': error_code,
-                'message': error_message,
-                'timestamp': timezone.now().isoformat(),
-                'path': path,
-                'method': method,
-                'status_code': status_code
-            }
-        }
-        
-        # Add details for validation errors
-        if isinstance(exc, DjangoValidationError):
-            if hasattr(exc, 'message_dict'):
-                response_data['error']['details'] = exc.message_dict
-            elif hasattr(exc, 'messages'):
-                response_data['error']['details'] = {'non_field_errors': exc.messages}
-        
-        response = Response(response_data, status=status_code)
-    
-    return response
-
-
-def handle_api_exception(exc_class, message=None, details=None, status_code=None):
-    """
-    Helper function to raise standardized API exceptions.
-    
-    Args:
-        exc_class: Exception class to raise
-        message: Custom error message
-        details: Additional error details
-        status_code: HTTP status code
-    """
-    exception = exc_class(detail=message, code=getattr(exc_class, 'default_code', 'error'))
-    if status_code:
-        exception.status_code = status_code
-    if details:
-        exception.detail = {'message': message or str(exception.detail), 'details': details}
-    raise exception
-
-
-# Convenience functions for common errors
+# Legacy convenience functions (DEPRECATED)
 def raise_validation_error(message=None, details=None):
-    """Raise a standardized validation error."""
-    handle_api_exception(APIValidationError, message, details)
+    """
+    DEPRECATED - Use: raise ValidationError(message) or raise ValidationError({'field': [message]})
+    
+    Migration examples:
+    OLD: raise_validation_error("Invalid data", details={'field': 'error'})
+    NEW: raise ValidationError({'field': ['error']})
+    
+    OLD: raise_validation_error("Invalid data")  
+    NEW: raise ValidationError("Invalid data")
+    """
+    logger.warning(
+        "raise_validation_error is deprecated. "
+        "Use rest_framework.exceptions.ValidationError directly."
+    )
+    if details and isinstance(details, dict):
+        raise ValidationError(details)
+    else:
+        raise ValidationError(message or "Validation error")
 
 
 def raise_authentication_error(message=None, details=None):
-    """Raise a standardized authentication error."""
-    handle_api_exception(APIAuthenticationError, message, details)
+    """
+    DEPRECATED - Use: raise AuthenticationFailed(message)
+    
+    Migration example:
+    OLD: raise_authentication_error("Invalid token")
+    NEW: raise AuthenticationFailed("Invalid token")
+    """
+    logger.warning(
+        "raise_authentication_error is deprecated. "
+        "Use rest_framework.exceptions.AuthenticationFailed directly."
+    )
+    raise AuthenticationFailed(message or "Authentication failed")
 
 
 def raise_permission_error(message=None, details=None):
-    """Raise a standardized permission error."""
-    handle_api_exception(APIPermissionError, message, details)
+    """
+    DEPRECATED - Use: raise PermissionDenied(message)
+    
+    Migration example:
+    OLD: raise_permission_error("Access denied")
+    NEW: raise PermissionDenied("Access denied")
+    """
+    logger.warning(
+        "raise_permission_error is deprecated. "
+        "Use rest_framework.exceptions.PermissionDenied directly."
+    )
+    raise PermissionDenied(message or "Permission denied")
 
 
 def raise_not_found_error(message=None, details=None):
-    """Raise a standardized not found error."""
-    handle_api_exception(APINotFoundError, message, details)
+    """
+    DEPRECATED - Use: raise NotFound(message)
+    
+    Migration example:
+    OLD: raise_not_found_error("User not found")
+    NEW: raise NotFound("User not found")
+    """
+    logger.warning(
+        "raise_not_found_error is deprecated. "
+        "Use rest_framework.exceptions.NotFound directly."
+    )
+    raise NotFound(message or "Not found")
 
 
 def raise_conflict_error(message=None, details=None):
-    """Raise a standardized conflict error."""
-    handle_api_exception(APIConflictError, message, details)
+    """
+    DEPRECATED - Use: raise ValidationError(message) for conflict situations
+    
+    Migration example:
+    OLD: raise_conflict_error("Duplicate resource")
+    NEW: raise ValidationError("Resource with this name already exists")
+    """
+    logger.warning(
+        "raise_conflict_error is deprecated. "
+        "Use rest_framework.exceptions.ValidationError directly."
+    )
+    if details and isinstance(details, dict):
+        raise ValidationError(details)
+    else:
+        raise ValidationError(message or "Conflict error")
 
 
 def raise_server_error(message=None, details=None):
-    """Raise a standardized server error."""
-    handle_api_exception(APIServerError, message, details)
+    """
+    DEPRECATED - Use: raise APIException(message)
+    
+    Migration example:
+    OLD: raise_server_error("Internal error")
+    NEW: raise APIException("Internal error")
+    """
+    logger.warning(
+        "raise_server_error is deprecated. "
+        "Use rest_framework.exceptions.APIException directly."
+    )
+    raise APIException(message or "Server error")
+
+
+# Standard DRF exceptions are now handled by drf-standardized-errors
+# No custom exception handler needed - the library handles everything!
+
+# Migration guide examples:
+
+def validation_examples():
+    """Examples of proper ValidationError usage with drf-standardized-errors"""
+    
+    # Field-specific validation error
+    raise ValidationError({
+        'email': ['This field is required.'],
+        'password': ['Password must be at least 8 characters.']
+    })
+    
+    # Non-field validation error
+    raise ValidationError('The provided data is invalid.')
+    
+    # Multiple non-field errors
+    raise ValidationError(['Error 1', 'Error 2'])
+
+
+def authentication_examples():
+    """Examples of proper authentication error usage"""
+    
+    # Simple authentication error
+    raise AuthenticationFailed('Invalid credentials.')
+    
+    # Not authenticated (no credentials)
+    raise NotAuthenticated('Authentication credentials were not provided.')
+
+
+def permission_examples():
+    """Examples of proper permission error usage"""
+    
+    # Simple permission error
+    raise PermissionDenied('You do not have permission to perform this action.')
+
+
+def not_found_examples():
+    """Examples of proper NotFound error usage"""
+    
+    # Simple not found error
+    raise NotFound('The requested resource was not found.')
+    
+    # Specific resource not found
+    raise NotFound('User with id 123 not found.')
+
+
+def other_examples():
+    """Examples of other standard DRF errors"""
+    
+    # Parse error
+    raise ParseError('Malformed JSON.')
+    
+    # Method not allowed
+    raise MethodNotAllowed('POST')
+    
+    # Throttled
+    raise Throttled(wait=60)
+    
+    # Generic server error
+    raise APIException('An unexpected error occurred.')

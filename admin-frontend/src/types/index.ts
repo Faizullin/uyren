@@ -48,3 +48,8 @@ export interface TestCase extends DocumentBase {
     actualOutput?: any;
     passed?: boolean;
 }
+export type FormMode = "edit" | "create";
+export interface PaginatedData<T> {
+    results: T[];
+    count: number;
+}

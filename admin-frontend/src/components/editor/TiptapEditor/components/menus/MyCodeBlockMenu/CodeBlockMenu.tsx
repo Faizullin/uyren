@@ -1,15 +1,15 @@
-import React, { memo, useCallback } from "react";
-import { BubbleMenu } from "../../BubbleMenu";
-import { Toolbar, ToolbarDivider } from "../../ui/Toolbar";
-import { useTiptapContext } from "../../Provider";
-import MenuButton from "../../MenuButton";
+import { CodeBlockSettingsNiceDialog, Settings } from "@/components/code/code-block-settings-nice-dialog";
+import { CodeExecuteButton } from "@/components/code/code-execute-button";
+import { showComponentNiceDialog } from "@/lib/nice-dialog";
 import { useEditorState } from "@tiptap/react";
-import CodeDropdown from "./CodeDropdown";
+import { memo, useCallback } from "react";
 import useCopyToClipboard from "../../../hooks/useCopyToClipboard";
 import { getNodeContainer } from "../../../utils/getNodeContainer";
-import useModal from "../../../hooks/useModal";
-import Dialog from "../../ui/Dialog";
-import { CodeExecuteButton } from "@/components/code/code-execute-button";
+import { BubbleMenu } from "../../BubbleMenu";
+import MenuButton from "../../MenuButton";
+import { useTiptapContext } from "../../Provider";
+import { Toolbar, ToolbarDivider } from "../../ui/Toolbar";
+import CodeDropdown from "./CodeDropdown";
 
 export const CodeBlockMenu = () => {
   const { editor, contentElement } = useTiptapContext();
@@ -42,18 +42,46 @@ export const CodeBlockMenu = () => {
     (value: string) => editor.commands.updateAttributes("codeBlock", { language: value }),
     [editor]
   );
-
-  const { open, handleOpen, handleClose } = useModal();
   const handleSettings = useCallback(() => {
-    handleOpen();
-  }, [editor, handleOpen]);
+    const attrs = editor.getAttributes("codeBlock");
+    const settings: Settings = {
+      can_edit: false,
+      can_run: false,
+      can_open_editor: false,
+      render_type: "code",
+      ...(attrs.settings || {}),
+      language: attrs.language || "javascript",
+    };
+    const docs = document.querySelectorAll(".code-block-bubble-menu");
+    docs.forEach((el) => {
+      el.classList.add("hidden");
+    });
+    showComponentNiceDialog<{
+      record: Settings;
+    }>(CodeBlockSettingsNiceDialog, {
+      args: {
+        settings: settings,
+      }
+    }).then((res) => {
+      if (res?.result?.record) {
+        editor.chain().focus().updateAttributes("codeBlock", {
+          settings: res.result.record,
+          language: res.result.record.language,
+        }).run();
+      }
+    }).finally(console.log).finally(() => {
+      docs.forEach((el) => {
+        el.classList.remove("hidden");
+      });
+    });
+  }, [editor]);
 
   const handleCopy = useCallback(() => {
     const node = getNodeContainer(editor, "pre");
     if (node?.textContent) {
       copy(node.textContent);
     }
-  }, [editor]);
+  }, [copy, editor]);
 
   const handleDelete = useCallback(() => {
     editor.chain().focus().deleteNode("codeBlock").run();
@@ -76,6 +104,7 @@ export const CodeBlockMenu = () => {
         appendTo: () => contentElement.current!,
         getReferenceClientRect,
       }}
+      className="code-block-bubble-menu"
     >
       <Toolbar>
         <CodeDropdown value={language} onSelect={handleSelect} />
@@ -87,9 +116,9 @@ export const CodeBlockMenu = () => {
         <ToolbarDivider />
         {codeContent && language && (
           <>
-            <CodeExecuteButton 
-              code={codeContent} 
-              language={language || 'javascript'} 
+            <CodeExecuteButton
+              code={codeContent}
+              language={language || 'javascript'}
               size="sm"
               variant="outline"
             />
@@ -103,9 +132,6 @@ export const CodeBlockMenu = () => {
         />
         <MenuButton icon="Trash" tooltip="Delete code" onClick={handleDelete} />
       </Toolbar>
-      <Dialog open={open} onOpenChange={handleClose}>
-        Hi
-      </Dialog>
     </BubbleMenu>
   );
 };

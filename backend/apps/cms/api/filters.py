@@ -87,10 +87,8 @@ class AttachmentFilter(django_filters.FilterSet):
     uploaded_after = django_filters.DateTimeFilter(field_name='created_at', lookup_expr='gte')
     uploaded_before = django_filters.DateTimeFilter(field_name='created_at', lookup_expr='lte')
     
-    # Uploader filters
     uploaded_by = django_filters.UUIDFilter(field_name='uploaded_by__id')
-    uploader_username = django_filters.CharFilter(field_name='uploaded_by__username', lookup_expr='icontains')
-    
+ 
     # File size filters
     file_size_min = django_filters.NumberFilter(field_name='file_size', lookup_expr='gte')
     file_size_max = django_filters.NumberFilter(field_name='file_size', lookup_expr='lte')
@@ -102,7 +100,7 @@ class AttachmentFilter(django_filters.FilterSet):
         model = Attachment
         fields = [
             'search', 'file_type', 'mime_type', 'is_public',
-            'uploaded_after', 'uploaded_before', 'uploaded_by', 'uploader_username',
+            'uploaded_after', 'uploaded_before', 'uploaded_by', 
             'file_size_min', 'file_size_max', 'orphaned'
         ]
     

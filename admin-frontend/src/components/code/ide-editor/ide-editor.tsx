@@ -1,6 +1,7 @@
 "use client";
 
-import { DocumentId, IDEConfig, IDEOutput, IDETemplate } from "@/types";
+import {IDEConfig, IDEOutput, IDETemplate } from "@/types";
+import { DocumentId } from "@/types/document";
 import Editor from "@monaco-editor/react";
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
