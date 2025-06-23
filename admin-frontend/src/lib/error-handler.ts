@@ -43,7 +43,7 @@ export class GlobalErrorHandler {
   /**
    * Handle 401 Unauthorized errors
    */
-  private static handleUnauthorized(): void {
+  private static handleUnauthorized(error: any): void {
     console.warn('Unauthorized access - clearing auth data and redirecting to login');
 
     // Clear authentication data
